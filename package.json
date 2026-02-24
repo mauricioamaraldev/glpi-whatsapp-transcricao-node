@@ -1,0 +1,25 @@
+{
+  "name": "glpi-whatsapp-transcricao-node",
+  "version": "1.0.0",
+  "description": "Este repositório contém um sistema que recebe um áudio do usuário pelo WhatsApp business da instituição, transcreve para texto e abre um chamado no GLPI",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mauricio-py/glpi-whatsapp-transcricao-node.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/mauricio-py/glpi-whatsapp-transcricao-node/issues"
+  },
+  "homepage": "https://github.com/mauricio-py/glpi-whatsapp-transcricao-node#readme",
+  "dependencies": {
+    "axios": "^1.13.5",
+    "dotenv": "^17.3.1"
+  }
+}
