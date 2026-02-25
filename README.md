@@ -20,8 +20,6 @@ Este sistema automatiza a abertura de chamados no GLPI a partir de mensagens de 
 
 - Acesso de administrador ao GLPI.
 
-- Configuração de uma conta de desenvolvedor na Meta (Facebook Developers) para o WhatsApp Business API.
-
 ## Configuração do GLPI
 
 Para que o sistema se comunique com o GLPI, é necessário habilitar a API REST:
@@ -65,7 +63,4 @@ Crie um arquivo .env na raiz do projeto e preencha com as suas credenciais (exem
 GLPI_API_URL=https://sua-instancia.com/apirest.php
 GLPI_USER_TOKEN=seu_user_token
 GLPI_APP_TOKEN=seu_app_token
-
-# Configurações do WhatsApp
-WHATSAPP_TOKEN=seu_whatsapp_token
 ```

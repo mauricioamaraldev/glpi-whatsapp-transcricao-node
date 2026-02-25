@@ -1,61 +1,32 @@
-const axios = require('axios');
-require('dotenv').config();
+const glpi = require('./services/glpiService');
 
-// Puxando as variáveis do seu arquivo .env
-const GLPI_API_URL = process.env.GLPI_API_URL;
-const GLPI_APP_TOKEN = process.env.GLPI_APP_TOKEN;
-const GLPI_USER_TOKEN = process.env.GLPI_USER_TOKEN;
-
-async function testarLeituraGLPI() {
-  let sessionToken;
+async function main() {
+  let sessionToken = null;
 
   try {
-    const authResponse = await axios.get(`${GLPI_API_URL}/initSession`, {
-      headers: {
-        'App-Token': GLPI_APP_TOKEN,
-        'Authorization': `user_token ${GLPI_USER_TOKEN}`
-      }
-    });
+    // 1. Iniciar sessão
+    sessionToken = await glpi.initSession();
 
-    sessionToken = authResponse.data.session_token;
+    console.log('2. Criando um novo chamado a partir do texto...');
+    const titulo = "(Ignorar)Teste de criação automática de chamado via API";
+    const texto = "Teste de criação automática de chamado via API. Este chamado foi criado a partir de um texto pré-definido para demonstrar a funcionalidade de criação de chamados no GLPI usando a API REST.";
 
-    // 2. Buscando os chamados do GLPI
+    const novoChamado = await glpi.createTicket(sessionToken, titulo, texto);
 
-    const ticketsResponse = await axios.get(`${GLPI_API_URL}/Ticket?range=0-5`, {
-      headers: {
-        'App-Token': GLPI_APP_TOKEN,
-        'Session-Token': sessionToken
-      }
-    });
-
-    const chamados = ticketsResponse.data;
-
-    console.log('\n--- RESULTADO DA BUSCA ---');
-    if (chamados && chamados.length > 0) {
-      chamados.forEach(chamado => {
-        console.log(`ID: ${chamado.id} | Título: ${chamado.name}`);
-      });
-    } else {
-      console.log('Nenhum chamado encontrado ou você não tem permissão para vê-los.');
-    }
-
+    console.log(`Chamado criado com sucesso! ID gerado: ${novoChamado.id}\n`);
   } catch (error) {
+    console.error('Erro na execução:');
     console.error(error.response ? error.response.data : error.message);
   } finally {
+    // 3. Encerrar sessão
     if (sessionToken) {
       try {
-        await axios.get(`${GLPI_API_URL}/killSession`, {
-          headers: {
-            'App-Token': GLPI_APP_TOKEN,
-            'Session-Token': sessionToken
-          }
-        });
-        console.log('🔒 Sessão encerrada de forma segura.');
+        await glpi.killSession(sessionToken);
       } catch (killError) {
-        console.error('Erro ao encerrar sessão:', killError.message);
+        console.error('Erro ao encerrar:', killError.message);
       }
     }
   }
 }
 
-testarLeituraGLPI();
+main();
