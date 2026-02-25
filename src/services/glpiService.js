@@ -1,7 +1,6 @@
 const axios = require('axios');
 require('dotenv').config();
 
-// Instância configurada do Axios
 const api = axios.create({
   baseURL: process.env.GLPI_API_URL,
   headers: {
@@ -10,47 +9,47 @@ const api = axios.create({
   }
 });
 
-// Função para iniciar sessão e obter o session_token
 async function initSession() {
   const response = await api.get('/initSession', {
-    headers: {
-      'Authorization': `user_token ${process.env.GLPI_USER_TOKEN}`
-    }
+    headers: { 'Authorization': `user_token ${process.env.GLPI_USER_TOKEN}` }
   });
   return response.data.session_token;
 }
 
-// Função para criar um novo chamado
-async function createTicket(sessionToken, title, content) {
+async function killSession(sessionToken) {
+  try {
+    await api.get('/killSession', { headers: { 'Session-Token': sessionToken } });
+  } catch (error) {
+    console.error('Erro ao matar a sessão:', error.message);
+  }
+}
+
+
+// Criação do chamado
+async function createTicket(sessionToken, title, content, idRequerente = null, idCategoria = null, idLocalizacao = null) {
   const payload = {
     input: {
       name: title,
       content: content,
       status: 1,
-      urgency: 3
+      urgency: 3,
+      type: 2 // 2 = Requisição (Request). Se fosse Incidente, seria 1.
     }
   };
+
+  if (idRequerente) payload.input._users_id_requester = idRequerente;
+  if (idCategoria) payload.input.itilcategories_id = idCategoria;
+  if (idLocalizacao) payload.input.locations_id = idLocalizacao;
+
   const response = await api.post('/Ticket', payload, {
-    headers: {
-      'Session-Token': sessionToken
-    }
+    headers: { 'Session-Token': sessionToken }
   });
 
-  return response.data
+  return response.data;
 }
 
-// Função para encerrar a sessão
-async function killSession(sessionToken) {
-  await api.get('/killSession', {
-    headers: {
-      'Session-Token': sessionToken
-    }
-  });
-}
-
-// Exportando as funções para serem usadas em outros arquivos
 module.exports = {
   initSession,
-  createTicket,
-  killSession
+  killSession,
+  createTicket
 };

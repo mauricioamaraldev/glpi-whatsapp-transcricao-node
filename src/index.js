@@ -1,31 +1,41 @@
-const glpi = require('./services/glpiService');
+const glpiController = require('./controllers/glpiController');
 
 async function main() {
-  let sessionToken = null;
 
   try {
-    // 1. Iniciar sessão
-    sessionToken = await glpi.initSession();
+    const titulo = "Requisição do banco de dados"
+    const texto = "Requisição do banco de dados"
+    const idRequerente = "Requisição do banco de dados"
+    const idCategoria = "Requisição do banco de dados"
+    const idLocalizacao = "Requisição do banco de dados"
 
-    console.log('2. Criando um novo chamado a partir do texto...');
-    const titulo = "(Ignorar)Teste de criação automática de chamado via API";
-    const texto = "Teste de criação automática de chamado via API. Este chamado foi criado a partir de um texto pré-definido para demonstrar a funcionalidade de criação de chamados no GLPI usando a API REST.";
+    console.log('\n⏳ Conectando ao GLPI e abrindo chamado...');
 
-    const novoChamado = await glpi.createTicket(sessionToken, titulo, texto);
-
-    console.log(`Chamado criado com sucesso! ID gerado: ${novoChamado.id}\n`);
-  } catch (error) {
-    console.error('Erro na execução:');
-    console.error(error.response ? error.response.data : error.message);
-  } finally {
-    // 3. Encerrar sessão
-    if (sessionToken) {
-      try {
-        await glpi.killSession(sessionToken);
-      } catch (killError) {
-        console.error('Erro ao encerrar:', killError.message);
+    // Função auxiliar para converter o que você digitou em número (ou null se vazio)
+    const tratarId = (valor) => {
+      if (valor !== undefined && valor !== null) {
+        const limpo = String(valor).trim();
+        if (limpo !== '') return Number(limpo);
       }
+      return null;
+    };
+
+    const autorFinal = tratarId(idRequerente);
+    const categoriaFinal = tratarId(idCategoria);
+    const localizacaoFinal = tratarId(idLocalizacao);
+
+    // Mandamos tudo pro controlador!
+    const ticket = await glpiController.criarChamado(titulo, texto, autorFinal, categoriaFinal, localizacaoFinal);
+
+    if (ticket && ticket.id) {
+      console.log(`\n✅ SUCESSO! Chamado aberto no GLPI.`);
+      console.log(`🎫 ID do Ticket: ${ticket.id}`);
+    } else {
+      console.log(`\n⚠️ Falha ao criar o chamado.`);
     }
+
+  } catch (error) {
+    console.error('\n❌ Erro durante a execução:', error.message);
   }
 }
 
