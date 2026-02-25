@@ -42,7 +42,6 @@ async function testarLeituraGLPI() {
   } catch (error) {
     console.error(error.response ? error.response.data : error.message);
   } finally {
-    // 3. Matando a sessão
     if (sessionToken) {
       try {
         await axios.get(`${GLPI_API_URL}/killSession`, {
