@@ -1,4 +1,7 @@
-const glpiController = require('./controllers/glpiController');
+import {
+  criarChamado,
+  processarAudio
+} from './controllers/glpiController.js';
 
 async function main() {
 
@@ -39,4 +42,16 @@ async function main() {
   }
 }
 
-main();
+async function trascreverAudio(caminhoDoAudioBase) {
+  try {
+    console.log('\n⏳ Transcrevendo áudio...');
+    const textoTranscrito = await processarAudio(caminhoDoAudioBase);
+    console.log('\n✅ Transcrição concluída:');
+    console.log(textoTranscrito);
+  } catch (error) {
+    console.error('\n❌ Erro durante a transcrição:', error.message);
+  }
+}
+
+trascreverAudio("Vem da API do whatsapp");
+//main();

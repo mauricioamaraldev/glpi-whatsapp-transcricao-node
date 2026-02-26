@@ -1,5 +1,5 @@
-const axios = require('axios');
-require('dotenv').config();
+import axios from 'axios';
+import "dotenv/config";
 
 const api = axios.create({
   baseURL: process.env.GLPI_API_URL,
@@ -48,7 +48,7 @@ async function createTicket(sessionToken, title, content, idRequerente = null, i
   return response.data;
 }
 
-module.exports = {
+export {
   initSession,
   killSession,
   createTicket

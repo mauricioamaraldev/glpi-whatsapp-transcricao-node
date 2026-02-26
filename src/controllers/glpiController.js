@@ -1,4 +1,5 @@
-const glpi = require('../services/glpiService'); // Note o '../' para voltar uma pasta
+import * as glpi from '../services/glpiService.js';
+import { transcreverAudio } from '../services/transcriptionService.js';
 
 // Criação do chamado
 async function criarChamado(titulo, texto, idRequerente = null, idCategoria = null, idLocalizacao = null) {
@@ -15,6 +16,16 @@ async function criarChamado(titulo, texto, idRequerente = null, idCategoria = nu
   }
 }
 
-module.exports = {
-  criarChamado
+async function processarAudio(caminhoDoAudioBase) {
+  try {
+    const textoTranscrito = await transcreverAudio(caminhoDoAudioBase);
+    console.log('Texto transcrito:', textoTranscrito);
+  } catch (error) {
+    console.error('❌ Erro ao processar áudio:', error.message);
+  }
+}
+
+export {
+  criarChamado,
+  processarAudio
 };
