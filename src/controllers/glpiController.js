@@ -1,5 +1,7 @@
 import * as glpi from '../services/glpiService.js';
-import { transcreverAudio } from '../services/transcriptionService.js';
+import { transcreverAudio, revisarTextoComIA } from '../services/transcriptionService.js';
+import { converterOggToMp3 } from '../utils/audioConverter.js';
+import fs from 'fs';
 
 // Criação do chamado
 async function criarChamado(titulo, texto, idRequerente = null, idCategoria = null, idLocalizacao = null) {
@@ -17,11 +19,32 @@ async function criarChamado(titulo, texto, idRequerente = null, idCategoria = nu
 }
 
 async function processarAudio(caminhoDoAudioBase) {
+  const caminhoAudioMp3 = caminhoDoAudioBase.replace('.ogg', '.mp3');
+
   try {
-    const textoTranscrito = await transcreverAudio(caminhoDoAudioBase);
-    console.log('Texto transcrito:', textoTranscrito);
+    await converterOggToMp3(caminhoDoAudioBase, caminhoAudioMp3);
+
+    const textoBruto = await transcreverAudio(caminhoAudioMp3);
+    console.log("IA primaria - Saiu do Whisper:", textoBruto);
+
+    const textoLimpo = await revisarTextoComIA(textoBruto);
+    console.log("IA secundaria - Saiu do Llama 3:", textoLimpo);
+
+    console.log('teste')
+    return textoLimpo;
   } catch (error) {
-    console.error('❌ Erro ao processar áudio:', error.message);
+    console.error('\n❌ Erro durante o processamento do áudio:', error.message);
+    throw error;
+  } finally {
+    // Limpeza do arquivo MP3 gerado
+    try {
+      if (fs.existsSync(caminhoAudioMp3)) {
+        fs.unlinkSync(caminhoAudioMp3);
+        console.log('\n🧹 Arquivo MP3 temporário removido.');
+      }
+    } catch (err) {
+      console.error('Erro ao remover o arquivo MP3 temporário:', err.message);
+    }
   }
 }
 

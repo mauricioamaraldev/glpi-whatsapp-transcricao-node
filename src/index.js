@@ -3,18 +3,16 @@ import {
   processarAudio
 } from './controllers/glpiController.js';
 
-async function main() {
-
+// Função para abrir um chamado no GLPI
+async function aberturaDeChamado() {
   try {
-    const titulo = "Requisição do banco de dados"
-    const texto = "Requisição do banco de dados"
-    const idRequerente = "Requisição do banco de dados"
-    const idCategoria = "Requisição do banco de dados"
-    const idLocalizacao = "Requisição do banco de dados"
+    const titulo = "(WHATSAPP) Chamado aberto via Node.js";
+    const texto = "Chamado aberto automaticamente via script Node.js do WhatsApp.";
+    const idRequerente = 182
+    const idCategoria = 162
+    const idLocalizacao = 1
 
-    console.log('\n⏳ Conectando ao GLPI e abrindo chamado...');
-
-    // Função auxiliar para converter o que você digitou em número (ou null se vazio)
+    // Função para tratar os IDs, garantindo que sejam números ou null
     const tratarId = (valor) => {
       if (valor !== undefined && valor !== null) {
         const limpo = String(valor).trim();
@@ -28,7 +26,7 @@ async function main() {
     const localizacaoFinal = tratarId(idLocalizacao);
 
     // Mandamos tudo pro controlador!
-    const ticket = await glpiController.criarChamado(titulo, texto, autorFinal, categoriaFinal, localizacaoFinal);
+    const ticket = await criarChamado(titulo, texto, autorFinal, categoriaFinal, localizacaoFinal);
 
     if (ticket && ticket.id) {
       console.log(`\n✅ SUCESSO! Chamado aberto no GLPI.`);
@@ -42,16 +40,27 @@ async function main() {
   }
 }
 
-async function trascreverAudio(caminhoDoAudioBase) {
+// A função principal que orquestra o processo de transcrição
+async function retornaTranscriacao() {
+  console.log('🚀 Iniciando teste da esteira de áudio...\n');
+
+  // Coloque aqui o caminho exato do áudio .ogg que você colocou na pasta
+  const caminhoDoAudioBase = './src/tests/audio-teste-usuario.ogg';
+
   try {
-    console.log('\n⏳ Transcrevendo áudio...');
-    const textoTranscrito = await processarAudio(caminhoDoAudioBase);
-    console.log('\n✅ Transcrição concluída:');
-    console.log(textoTranscrito);
+    // Processa o áudio e obtém a transcrição
+    const texto = await processarAudio(caminhoDoAudioBase);
+
+    console.log('\n✅ RESULTADO FINAL DA TRANSCRIÇÃO:');
+    console.log(`"${texto}"\n`);
   } catch (error) {
-    console.error('\n❌ Erro durante a transcrição:', error.message);
+    console.error('\n❌ O teste de transcrição falhou:', error.message);
   }
 }
 
-trascreverAudio("Vem da API do whatsapp");
-//main();
+async function main() {
+
+}
+
+retornaTranscriacao();
+//aberturaDeChamado();
