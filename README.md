@@ -1,77 +1,76 @@
-# GLPI WhatsApp Transcrição (Node.js)
+# 🎧 Automação de Chamados GLPI via WhatsApp (AI Pipeline)
 
-Este sistema automatiza a abertura de chamados no GLPI a partir de mensagens de áudio enviadas via WhatsApp Business. O fluxo consiste em receber o áudio, transcrevê-lo para texto utilizando a API de Inteligência Artificial da Groq (modelo Whisper) e registrar o incidente automaticamente na plataforma de gestão.
+Este projeto é um _middleware_ em Node.js construído para automatizar e otimizar a abertura de chamados de suporte de TI em um ambiente universitário. Ele recebe relatos em áudio (padrão WhatsApp), processa o arquivo, transcreve, corrige jargões técnicos usando Inteligência Artificial e injeta o ticket perfeitamente formatado via REST API no sistema GLPI.
 
-## Funcionalidades
+## 🎯 O Problema que Resolvemos
 
-- Transcrição automática de áudio para texto utilizando IA de alta velocidade (Groq/Whisper).
+Atualmente, usuários (professores e funcionários) encontram atrito ao parar suas aulas para abrir chamados detalhados no GLPI. Ao permitir o envio de áudios informais, reduzimos o tempo de resposta e garantimos que a equipe de TI receba tickets padronizados, com termos técnicos corretos e categorizados automaticamente.
 
-- Abertura de chamados no GLPI via API com a transcrição no corpo do atendimento.
+## 🏗️ Arquitetura e Decisões de Engenharia
 
-- Vinculação dinâmica de IDs (Requerente, Categoria e Localização) na criação do ticket.
+O sistema foi desenhado com foco em resiliência, isolamento de responsabilidades e escalabilidade:
 
-- Arquitetura modular e escalável (Controllers e Services) utilizando o padrão moderno ES Modules.
+- **Agentic Workflow (Pipeline de Múltiplas IAs):** Em vez de confiar em um único modelo, utilizamos uma esteira de dois passos. O **Whisper** atua como o "Ouvido" (Speech-to-Text), enquanto o **Llama 3** atua como o "Cérebro" (Revisor Técnico), formatando a saída em um JSON estrito.
+- **Garbage Collection Manual:** O processamento de mídia gera arquivos temporários. O Controller implementa rotinas de limpeza (`fs.unlink`) garantidas em blocos `finally` para evitar vazamento de memória e sobrecarga do disco do servidor.
+- **Defensive Programming & Adapter Pattern:** A comunicação com o FFmpeg foi encapsulada em Promises nativas, e as respostas da IA passam por sanitização via Expressões Regulares (Regex) antes do _parsing_ do JSON, protegendo a aplicação de quebras fatais.
+- **Data Mapper Pattern:** Tradução isolada de entidades em texto natural (ex: "Sala 4") para Chaves Primárias do banco de dados relacional do GLPI (ex: ID `55`).
 
-- Recepção de áudios via API do WhatsApp Business (Em desenvolvimento).
+## 🚀 Tecnologias Utilizadas
 
-## Pré-requisitos
+- **Node.js** (ES Modules)
+- **API Groq** (`whisper-large-v3` e `llama-3.3-70b-versatile`)
+- **API REST GLPI** (Autenticação Stateless com App-Token e Session-Token)
+- **FFmpeg** (`fluent-ffmpeg`)
+- **File System** nativo do Node.js (`fs/promises`)
 
-### Antes de começar, você precisará de:
-
-1. Node.js instalado (versão 16.x ou superior).
-
-2. Acesso de Administrador/Técnico ao GLPI.
-
-3. Conta de desenvolvedor na Groq para geração da chave de API gratuita.
-
-## Configuração do GLPI
-
-### Para que o sistema se comunique com o GLPI, é necessário habilitar a API REST:
-
-1. Acesse o painel do GLPI.
-
-2. Vá em Configurar > Geral > API.
-
-3. Ative a opção Habilitar login com credenciais externas.
-
-4. Anote a URL da API (Geralmente http://seu-ip/apirest.php ou https://seu-dns/apirest.php).
-
-5. Gere um App-Token para autorizar a aplicação.
-
-## 💻 Instalação
-
-#### Clone o repositório
+## 📁 Estrutura do Projeto
 
 ```
-git clone https://github.com/seu-usuario/glpi-whatsapp-transcricao-node.git
+📦 src
+┣ 📂 controllers
+┃ ┗ 📜 glpiController.js # Orquestrador da esteira (Maestro) e Garbage Collector
+┣ 📂 services
+┃ ┣ 📜 glpiService.js # Integração HTTP com a API do GLPI (Auth e Criação)
+┃ ┗ 📜 transcriptionService.js # Pipeline de IA (Groq Whisper + Llama 3 JSON Mode)
+┣ 📂 utils
+┃ ┗ 📜 audioConverter.js # Adapter Pattern para o FFmpeg (OGG para MP3)
+┣ 📂 tests
+┃ ┗ 🔊 audio-teste.ogg # Arquivos de áudio isolados para testes
+┗ 📜 index.js # Entry point e Sandbox de testes da aplicação
 ```
 
-#### Entre na pasta do projeto
+## ⚙️ Como Executar Localmente
 
-```
-cd glpi-whatsapp-transcricao-node
-```
+### Pré-requisitos
 
-#### Instale as dependências
+1. **Node.js** instalado (versão 18+ recomendada).
+2. **FFmpeg** instalado e configurado nas Variáveis de Ambiente (`PATH`) do Sistema Operacional.
+3. Chaves de API da Groq e credenciais de acesso ao GLPI.
 
-Certifique-se de que o seu projeto possui o pacote da Groq e as ferramentas base instaladas:
+### Setup
 
-```
-npm install axios dotenv groq-sdk
-```
+1. Clone este repositório.
+2. Instale as dependências:
+   ```
+   npm install
+   ```
+3. Crie um arquivo `.env` na raiz do projeto com as seguintes variáveis:
+   ```
+   GROQ_API_KEY=sua_chave_aqui
+   GLPI_API_URL=http://seu-glpi/apirest.php
+   GLPI_APP_TOKEN=seu_app_token
+   GLPI_USER_TOKEN=seu_user_token
+   ```
+4. Coloque um arquivo de áudio `.ogg` na pasta `src/tests/` para simular o WhatsApp.
+5. Execute o arquivo principal:
+   ```
+   node ./src/index.js
+   ```
 
-> Nota: Este projeto utiliza ES Modules. O arquivo package.json já deve conter a propriedade "type": "module".
+## 🛣️ Próximos Passos (Roadmap)
 
-## 🔐 Variáveis de Ambiente
-
-#### Crie um arquivo .env na raiz do projeto e preencha com as suas credenciais, seguindo este formato:
-
-```
-# Configurações do GLPI
-GLPI_API_URL=https://sua-instancia.com/apirest.php
-GLPI_USER_TOKEN=seu_user_token_aqui
-GLPI_APP_TOKEN=seu_app_token_aqui
-
-# Configurações de Inteligência Artificial (Transcrição)
-GROQ_API_KEY=sua_chave_api_da_groq_aqui
-```
+- [x] Processamento e conversão de mídia.
+- [x] Extração de áudio e correção semântica corporativa.
+- [x] Integração completa de sessão e abertura de chamados no GLPI.
+- [ ] **Fase 2:** Integração com Webhooks do WhatsApp (via biblioteca ou Meta Cloud API) para escutar mensagens em tempo real.
+- [ ] **Fase 3:** Retornar o ID do Ticket gerado diretamente no chat do usuário para acompanhamento.

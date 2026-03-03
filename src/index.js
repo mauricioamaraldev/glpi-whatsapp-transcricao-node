@@ -1,66 +1,44 @@
-import {
-  criarChamado,
-  processarAudio
-} from './controllers/glpiController.js';
+import { criarChamado, processarAudio } from './controllers/glpiController.js';
 
-// Função para abrir um chamado no GLPI
-async function aberturaDeChamado() {
+async function main() {
+  console.log('🚀 Iniciando a esteira completa...\n');
+  const caminhoDoAudioBase = './src/tests/audio-teste-usuario.ogg';
+
   try {
-    const titulo = "(WHATSAPP) Chamado aberto via Node.js";
-    const descricao = "Chamado aberto automaticamente via script Node.js do WhatsApp.";
-    const idRequerente = 182
-    const idCategoria = 162
-    const idLocalizacao = 1
+    // PASSO 1: Manda processar o áudio. O Controller vai devolver o Objeto JSON.
+    const dadosDaIA = await processarAudio(caminhoDoAudioBase);
 
-    // Função para tratar os IDs, garantindo que sejam números ou null
-    const tratarId = (valor) => {
-      if (valor !== undefined && valor !== null) {
-        const limpo = String(valor).trim();
-        if (limpo !== '') return Number(limpo);
-      }
-      return null;
+    // PASSO 2: Preparar os dados para o GLPI
+    const titulo = dadosDaIA.titulo || "Chamado sem título definido";
+    const descricao = dadosDaIA.descricao || "Descrição não fornecida.";
+    const idRequerente = 182;
+    const idCategoria = dadosDaIA.idCategoria || 100; // Categoria padrão
+
+    // O Dicionário de Salas fica aqui perto de onde o chamado será aberto
+    const mapaDeLocalizacao = {
+      "Sala 1": 1,
+      "Sala 2": 2,
+      "Sala 4": 55,
+      "Padrão": 1
     };
+    // Pega a string "Sala 4" do JSON e converte no número 55
+    const idLocalizacao = mapaDeLocalizacao[dadosDaIA.localizacao] || mapaDeLocalizacao["Padrão"];
 
-    const autorFinal = tratarId(idRequerente);
-    const categoriaFinal = tratarId(idCategoria);
-    const localizacaoFinal = tratarId(idLocalizacao);
+    console.log('\n📝 Injetando dados no GLPI...');
 
-    // Mandamos tudo pro controlador!
-    const ticket = await criarChamado(titulo, descricao, autorFinal, categoriaFinal, localizacaoFinal);
+    // PASSO 3: Abrir o chamado de fato
+    const ticket = await criarChamado(titulo, descricao, idRequerente, idCategoria, idLocalizacao);
 
     if (ticket && ticket.id) {
-      console.log(`\n✅ SUCESSO! Chamado aberto no GLPI.`);
+      console.log(`\n✅ SUCESSO ABSOLUTO! Chamado aberto no GLPI.`);
       console.log(`🎫 ID do Ticket: ${ticket.id}`);
     } else {
       console.log(`\n⚠️ Falha ao criar o chamado.`);
     }
 
   } catch (error) {
-    console.error('\n❌ Erro durante a execução:', error.message);
+    console.error('\n❌ A esteira falhou:', error.message);
   }
 }
 
-// A função principal que orquestra o processo de transcrição
-async function retornaTranscriacao() {
-  console.log('🚀 Iniciando teste da esteira de áudio...\n');
-
-  // Coloque aqui o caminho exato do áudio .ogg que você colocou na pasta
-  const caminhoDoAudioBase = './src/tests/audio-teste-usuario.ogg';
-
-  try {
-    // Processa o áudio e obtém a transcrição
-    const texto = await processarAudio(caminhoDoAudioBase);
-
-    console.log('\n✅ RESULTADO FINAL DA TRANSCRIÇÃO:');
-    console.log(`"${texto}"\n`);
-  } catch (error) {
-    console.error('\n❌ O teste de transcrição falhou:', error.message);
-  }
-}
-
-async function main() {
-
-}
-
-retornaTranscriacao();
-//aberturaDeChamado();
+main();

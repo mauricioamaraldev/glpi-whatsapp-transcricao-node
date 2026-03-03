@@ -29,24 +29,29 @@ async function revisarTextoComIA(textoBruto) {
     const completion = await groq.chat.completions.create({
       model: "llama-3.3-70b-versatile",
       temperature: 0.1,
+      // 🔒 TRAVA 1: Obriga a infraestrutura da Groq a cuspir apenas um JSON válido
+      response_format: { type: "json_object" },
       messages: [
         {
           role: "system",
-          // Instrução clara para a IA: corrigir erros de transcrição, mantendo termos técnicos relacionados a tecnologia e instituições de ensino, e entregar um texto final claro e profissional
+          // Instrução clara para a IA
           content: `Você é um técnico de suporte de uma Universidade responsável por triagem de chamados.
-          Sua única missão é ler a transcrição de áudio do usuário e corrigir os erros do reconhecimento de voz, extrai também as informações mais importantes, se houver, como o local do problema, o equipamento envolvido, a ação que o usuário estava tentando realizar e o resultado esperado. se possivel listar as informações extraídas em tópicos.
+          Sua única missão é ler a transcrição de áudio do usuário e corrigir os erros do reconhecimento de voz, extraindo também as informações mais importantes, se houver, como o local do problema, o equipamento envolvido, a ação que o usuário estava tentando realizar e o resultado esperado.
           
           Regras OBRIGATÓRIAS de correção:
           - O texto final deve ser claro e profissional.
-          - O texto final tem que ter titulo, descrição e localização
-          - Entregar texto final no formato JSON, seguindo o exemplo:
-          {
-            "titulo": " o título deve ser curto e direto",
-            "descricao": "a descrição deve conter detalhes do problema. Se possível, , o equipamento envolvido, a ação que o usuário estava tentando realizar e o resultado esperado. Liste essas informações em tópicos.",
-            "idlocalizacao": "localização do problema, se possível, como sala ou setor. Se não for possível identificar a localização, deixe esse campo como null."
-          }
+          - Entregar texto final OBRIGATORIAMENTE no formato JSON.
           
-          IMPORTANTE: Devolva APENAS o texto corrigido. Não adicione saudações como "Aqui está o texto" ou "Entendido".`
+          🔒 TRAVA 2: REGRAS DE SINTAXE JSON (CRÍTICO PARA O SISTEMA NÃO QUEBRAR):
+          1. JAMAIS use aspas duplas ("") dentro dos valores de texto. Se precisar destacar uma palavra, use aspas simples ('').
+          2. JAMAIS faça quebras de linha reais (Enter) dentro da string da descrição. Para pular linha ou criar tópicos, você DEVE escrever literalmente os caracteres \\n no texto.
+          
+          Exemplo exato de saída esperada (siga esta formatação estritamente):
+          {
+            "titulo": "Problema no PC da Sala 4",
+            "descricao": "O usuário relatou uma falha.\\n\\nInformações extraídas:\\n- Equipamento: Computador\\n- Ação: Abrir slide",
+            "idlocalizacao": "Sala 4"
+          }`
         },
         {
           role: "user",
