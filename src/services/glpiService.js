@@ -1,6 +1,7 @@
 import axios from 'axios';
 import "dotenv/config";
 
+// Configuração do cliente Axios para GLPI
 const api = axios.create({
   baseURL: process.env.GLPI_API_URL,
   headers: {
@@ -9,6 +10,7 @@ const api = axios.create({
   }
 });
 
+// Função para iniciar uma sessão no GLPI e obter o token de sessão
 async function initSession() {
   const response = await api.get('/initSession', {
     headers: { 'Authorization': `user_token ${process.env.GLPI_USER_TOKEN}` }
@@ -16,6 +18,7 @@ async function initSession() {
   return response.data.session_token;
 }
 
+// Função para encerrar a sessão no GLPI
 async function killSession(sessionToken) {
   try {
     await api.get('/killSession', { headers: { 'Session-Token': sessionToken } });
@@ -23,7 +26,6 @@ async function killSession(sessionToken) {
     console.error('Erro ao matar a sessão:', error.message);
   }
 }
-
 
 // Criação do chamado
 async function createTicket(sessionToken, title, content, idRequerente = null, idCategoria = null, idLocalizacao = null) {

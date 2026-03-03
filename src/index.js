@@ -7,7 +7,7 @@ import {
 async function aberturaDeChamado() {
   try {
     const titulo = "(WHATSAPP) Chamado aberto via Node.js";
-    const texto = "Chamado aberto automaticamente via script Node.js do WhatsApp.";
+    const descricao = "Chamado aberto automaticamente via script Node.js do WhatsApp.";
     const idRequerente = 182
     const idCategoria = 162
     const idLocalizacao = 1
@@ -26,7 +26,7 @@ async function aberturaDeChamado() {
     const localizacaoFinal = tratarId(idLocalizacao);
 
     // Mandamos tudo pro controlador!
-    const ticket = await criarChamado(titulo, texto, autorFinal, categoriaFinal, localizacaoFinal);
+    const ticket = await criarChamado(titulo, descricao, autorFinal, categoriaFinal, localizacaoFinal);
 
     if (ticket && ticket.id) {
       console.log(`\n✅ SUCESSO! Chamado aberto no GLPI.`);
