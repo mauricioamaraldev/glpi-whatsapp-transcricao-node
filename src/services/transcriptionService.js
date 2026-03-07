@@ -1,0 +1,70 @@
+import 'dotenv/config';
+import Groq from 'groq-sdk';
+import fs from 'fs';
+
+// Configuração do cliente Groq
+const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+
+async function transcreverAudio(caminhoDoAudioBase) {
+  try {
+    const response = await groq.audio.transcriptions.create({
+      file: fs.createReadStream(caminhoDoAudioBase),
+      model: "whisper-large-v3",
+      response_format: "json",
+      // Instrução para o modelo: enfatizar a precisão de termos técnicos relacionados a tecnologia e instituições de ensino
+      prompt: "Áudio com termos técnicos de tecnologia e de instituição de ensino, como GLPI, API, Node.js, Datashow, PC, computador, estabilizador, fonte, sala, setor, lugar, ação etc... Transcreva com precisão esses termos.",
+      language: "pt"
+    });
+
+    return response.text;
+  } catch (error) {
+    console.error('Erro ao transcrever áudio:', error.message);
+    throw error;
+  }
+};
+
+// Função para revisar o texto transcrito usando IA
+async function revisarTextoComIA(textoBruto) {
+  try {
+    const completion = await groq.chat.completions.create({
+      model: "llama-3.3-70b-versatile",
+      temperature: 0.1,
+      // 🔒 TRAVA 1: Obriga a infraestrutura da Groq a cuspir apenas um JSON válido
+      response_format: { type: "json_object" },
+      messages: [
+        {
+          role: "system",
+          // Instrução clara para a IA
+          content: `Você é um técnico de suporte de uma Universidade responsável por triagem de chamados.
+          Sua única missão é ler a transcrição de áudio do usuário e corrigir os erros do reconhecimento de voz, extraindo também as informações mais importantes, se houver, como o local do problema, o equipamento envolvido, a ação que o usuário estava tentando realizar e o resultado esperado.
+          
+          Regras OBRIGATÓRIAS de correção:
+          - O texto final deve ser claro e profissional.
+          - Entregar texto final OBRIGATORIAMENTE no formato JSON.
+          
+          🔒 TRAVA 2: REGRAS DE SINTAXE JSON (CRÍTICO PARA O SISTEMA NÃO QUEBRAR):
+          1. JAMAIS use aspas duplas ("") dentro dos valores de texto. Se precisar destacar uma palavra, use aspas simples ('').
+          2. JAMAIS faça quebras de linha reais (Enter) dentro da string da descrição. Para pular linha ou criar tópicos, você DEVE escrever literalmente os caracteres \\n no texto.
+          
+          Exemplo exato de saída esperada (siga esta formatação estritamente):
+          {
+            "titulo": "Problema no PC da Sala 4",
+            "descricao": "O usuário relatou uma falha.\\n\\nInformações extraídas:\\n- Equipamento: Computador\\n- Ação: Abrir slide",
+            "idlocalizacao": "Sala 4"
+          }`
+        },
+        {
+          role: "user",
+          content: textoBruto
+        }
+      ],
+    });
+
+    return completion.choices[0]?.message?.content;
+  } catch (error) {
+    console.error('Erro ao revisar texto com IA:', error.message);
+    throw error;
+  }
+}
+
+export { transcreverAudio, revisarTextoComIA };
