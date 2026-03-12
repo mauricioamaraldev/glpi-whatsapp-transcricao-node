@@ -1,6 +1,13 @@
 import { criarChamado, processarAudio } from './controllers/glpiController.js';
+import 'dotenv/config';
+import express from 'express';
 
-async function main() {
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+app.use(express.json());
+
+app.post('  ', async (req, res) => {
   console.log('🚀 Iniciando a esteira completa...\n');
   const caminhoDoAudioBase = './src/tests/audio-teste-usuario.ogg';
 
@@ -39,6 +46,9 @@ async function main() {
   } catch (error) {
     console.error('\n❌ A esteira falhou:', error.message);
   }
-}
+});
 
-main();
+app.listen(PORT, () => {
+  console.log(`🚀 Servidor rodando e escutando na porta ${PORT}`);
+});
+
