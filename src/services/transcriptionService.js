@@ -1,6 +1,6 @@
 import 'dotenv/config';
-import Groq from 'groq-sdk';
 import fs from 'fs';
+import Groq from 'groq-sdk';
 
 // Configuração do cliente Groq
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
@@ -47,11 +47,14 @@ async function revisarTextoComIA(textoBruto) {
           2. JAMAIS faça quebras de linha reais (Enter) dentro da string da descrição. Para pular linha ou criar tópicos, você DEVE escrever literalmente os caracteres \\n no texto.
           
           Exemplo exato de saída esperada (siga esta formatação estritamente):
+          // Dentro de revisarTextoComIA, altere o exemplo no System Prompt:
           {
             "titulo": "Problema no PC da Sala 4",
-            "descricao": "O usuário relatou uma falha.\\n\\nInformações extraídas:\\n- Equipamento: Computador\\n- Ação: Abrir slide",
-            "idlocalizacao": "Sala 4"
-          }`
+            "descricao": "O usuário relatou uma falha...",
+            "idLocalizacao": "Sala 4",
+            "idCategoria": 100
+          }
+            `
         },
         {
           role: "user",
@@ -67,4 +70,5 @@ async function revisarTextoComIA(textoBruto) {
   }
 }
 
-export { transcreverAudio, revisarTextoComIA };
+export { revisarTextoComIA, transcreverAudio };
+

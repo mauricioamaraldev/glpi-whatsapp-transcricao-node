@@ -1,4 +1,5 @@
 import ffmpeg from 'fluent-ffmpeg';
+ffmpeg.setFfmpegPath('C:/ffmpeg/bin/ffmpeg.exe');
 
 // Função para converter arquivos de áudio de .ogg para .mp3 usando ffmpeg
 const converterOggToMp3 = function (caminhoOrigem, caminhoDestino) {
@@ -10,7 +11,6 @@ const converterOggToMp3 = function (caminhoOrigem, caminhoDestino) {
         reject(err);
       })
       .on('end', () => {
-        console.log('Conversão concluída com sucesso!');
         resolve();
       })
       .save(caminhoDestino);
@@ -19,4 +19,5 @@ const converterOggToMp3 = function (caminhoOrigem, caminhoDestino) {
 
 export {
   converterOggToMp3
-}
+};
+

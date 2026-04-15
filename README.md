@@ -1,76 +1,110 @@
-# 🎧 Automação de Chamados GLPI via WhatsApp (AI Pipeline)
+# 🎧 GLPI AI-Voice Pipeline: Automação de Chamados via WhatsApp/Telegram
 
-Este projeto é um _middleware_ em Node.js construído para automatizar e otimizar a abertura de chamados de suporte de TI em um ambiente universitário. Ele recebe relatos em áudio (padrão WhatsApp), processa o arquivo, transcreve, corrige jargões técnicos usando Inteligência Artificial e injeta o ticket perfeitamente formatado via REST API no sistema GLPI.
+<p align="center">
+  <img src="https://img.shields.io/badge/Node.js-339933?style=for-the-badge&logo=nodedotjs&logoColor=white" alt="NodeJS" />
+  <img src="https://img.shields.io/badge/Groq-f3d122?style=for-the-badge&logo=openai&logoColor=black" alt="Groq" />
+  <img src="https://img.shields.io/badge/GLPI-00599c?style=for-the-badge&logo=glpi&logoColor=white" alt="GLPI" />
+  <img src="https://img.shields.io/badge/Telegram-26A5E4?style=for-the-badge&logo=telegram&logoColor=white" alt="Telegram" />
+</p>
 
-## 🎯 O Problema que Resolvemos
+> **Middleware de alta performance para transformar relatos informais de áudio em tickets técnicos estruturados no GLPI.**
 
-Atualmente, usuários (professores e funcionários) encontram atrito ao parar suas aulas para abrir chamados detalhados no GLPI. Ao permitir o envio de áudios informais, reduzimos o tempo de resposta e garantimos que a equipe de TI receba tickets padronizados, com termos técnicos corretos e categorizados automaticamente.
+Este projeto automatiza a abertura de chamados de suporte técnico em ambientes universitários, eliminando barreiras burocráticas e melhorando a precisão dos dados através de Inteligência Artificial Generativa.
+
+---
+
+## 🎯 O Problema & A Solução
+
+**O Problema:** Professores e funcionários enfrentam fricção ao abrir chamados manuais durante as aulas. O resultado são descrições vagas como _"o computador não liga"_ ou _"está quebrado"_, o que atrasa o diagnóstico.
+
+**A Solução:** Uma interface de voz que permite o envio de áudio natural. O pipeline de IA interpreta gírias, identifica o local (ex: "Sala 4"), corrige jargões técnicos e injeta o ticket via API REST, reduzindo o tempo de triagem em até **80%**.
+
+---
 
 ## 🏗️ Arquitetura e Decisões de Engenharia
 
-O sistema foi desenhado com foco em resiliência, isolamento de responsabilidades e escalabilidade:
+O projeto foi construído seguindo princípios de **Clean Architecture** e **Resiliência**:
 
-- **Agentic Workflow (Pipeline de Múltiplas IAs):** Em vez de confiar em um único modelo, utilizamos uma esteira de dois passos. O **Whisper** atua como o "Ouvido" (Speech-to-Text), enquanto o **Llama 3** atua como o "Cérebro" (Revisor Técnico), formatando a saída em um JSON estrito.
-- **Garbage Collection Manual:** O processamento de mídia gera arquivos temporários. O Controller implementa rotinas de limpeza (`fs.unlink`) garantidas em blocos `finally` para evitar vazamento de memória e sobrecarga do disco do servidor.
-- **Defensive Programming & Adapter Pattern:** A comunicação com o FFmpeg foi encapsulada em Promises nativas, e as respostas da IA passam por sanitização via Expressões Regulares (Regex) antes do _parsing_ do JSON, protegendo a aplicação de quebras fatais.
-- **Data Mapper Pattern:** Tradução isolada de entidades em texto natural (ex: "Sala 4") para Chaves Primárias do banco de dados relacional do GLPI (ex: ID `55`).
+- **Agentic Multi-Stage Pipeline:** Em vez de um único prompt, utilizamos uma esteira de dois estágios via Groq Cloud:
+  - 👂 **Whisper-large-v3:** Atua como o "Ouvido" (STT) focado em transcrição fonética de alta fidelidade.
+  - 🧠 **Llama-3.3-70b:** Atua como o "Cérebro" (LLM), realizando a sanitização, extração de entidades (Sala, Equipamento) e gerando um **JSON Estrito**.
+- **Garbage Collection & Resource Management:** Rotinas de limpeza automática de arquivos temporários (`.ogg`, `.mp3`) garantidas por blocos `finally`, evitando o consumo desnecessário de storage.
+- **Adapter Pattern para Mídia:** Encapsulamento do FFmpeg em Promises nativas, permitindo a conversão assíncrona de codecs de voz para formatos compatíveis com a IA.
+- **Data Mapping:** Tradução dinâmica de linguagem natural para IDs relacionais do GLPI (Ex: _"Sala 4"_ ⮕ `ID 55`).
 
-## 🚀 Tecnologias Utilizadas
+---
 
-- **Node.js** (ES Modules)
-- **API Groq** (`whisper-large-v3` e `llama-3.3-70b-versatile`)
-- **API REST GLPI** (Autenticação Stateless com App-Token e Session-Token)
-- **FFmpeg** (`fluent-ffmpeg`)
-- **File System** nativo do Node.js (`fs/promises`)
+## 🚀 Stack Tecnológica
 
-## 📁 Estrutura do Projeto
+| Componente      | Tecnologia                   |
+| :-------------- | :--------------------------- |
+| **Runtime**     | Node.js (ES Modules)         |
+| **IA Engine**   | Groq SDK (Whisper & Llama 3) |
+| **Mídia**       | FFmpeg via fluent-ffmpeg     |
+| **Bot API**     | Telegraf (Telegram)          |
+| **Comunicação** | Axios com Interceptors       |
 
-```
+---
+
+## 📁 Estrutura de Pastas
+
+```bash
 📦 src
-┣ 📂 controllers
-┃ ┗ 📜 glpiController.js # Orquestrador da esteira (Maestro) e Garbage Collector
-┣ 📂 services
-┃ ┣ 📜 glpiService.js # Integração HTTP com a API do GLPI (Auth e Criação)
-┃ ┗ 📜 transcriptionService.js # Pipeline de IA (Groq Whisper + Llama 3 JSON Mode)
-┣ 📂 utils
-┃ ┗ 📜 audioConverter.js # Adapter Pattern para o FFmpeg (OGG para MP3)
-┣ 📂 tests
-┃ ┗ 🔊 audio-teste.ogg # Arquivos de áudio isolados para testes
-┗ 📜 index.js # Entry point e Sandbox de testes da aplicação
+ ┣ 📂 controllers
+ ┃ ┗ 📜 glpiController.js     # Maestro da esteira e gestão de estados
+ ┣ 📂 services
+ ┃ ┣ 📜 glpiService.js       # Interface com a API REST do GLPI
+ ┃ ┣ 📜 telegramBot.js       # Entry point do evento de entrada (Bot)
+ ┃ ┗ 📜 transcription.js     # Inteligência: Whisper + Llama 3 JSON Mode
+ ┣ 📂 utils
+ ┃ ┗ 📜 audioConverter.js    # Utilitário de conversão de codecs
+ ┣ 📂 temp                   # Arquivos voláteis (ignorado pelo Git)
+ ┗ 📜 index.js               # Inicialização e Injeção de Dependências
 ```
 
-## ⚙️ Como Executar Localmente
+## ⚙️ Configuração do Ambiente
 
-### Pré-requisitos
+1. Pré-requisitos
+   Node.js 18+
 
-1. **Node.js** instalado (versão 18+ recomendada).
-2. **FFmpeg** instalado e configurado nas Variáveis de Ambiente (`PATH`) do Sistema Operacional.
-3. Chaves de API da Groq e credenciais de acesso ao GLPI.
+2. FFmpeg instalado no sistema (Obrigatório para conversão .oga ⮕ .mp3)
 
-### Setup
+3. Instalação
 
-1. Clone este repositório.
-2. Instale as dependências:
-   ```
-   npm install
-   ```
-3. Crie um arquivo `.env` na raiz do projeto com as seguintes variáveis:
-   ```
-   GROQ_API_KEY=sua_chave_aqui
-   GLPI_API_URL=http://seu-glpi/apirest.php
-   GLPI_APP_TOKEN=seu_app_token
-   GLPI_USER_TOKEN=seu_user_token
-   ```
-4. Coloque um arquivo de áudio `.ogg` na pasta `src/tests/` para simular o WhatsApp.
-5. Execute o arquivo principal:
-   ```
-   node ./src/index.js
-   ```
+```bash
+git clone https://github.com/mauricioamaraldev/glpi-whatsapp-transcricao-node
 
-## 🛣️ Próximos Passos (Roadmap)
+cd projeto-glpi-ai
 
-- [x] Processamento e conversão de mídia.
-- [x] Extração de áudio e correção semântica corporativa.
-- [x] Integração completa de sessão e abertura de chamados no GLPI.
-- [ ] **Fase 2:** Integração com Webhooks do WhatsApp (via biblioteca ou Meta Cloud API) para escutar mensagens em tempo real.
-- [ ] **Fase 3:** Retornar o ID do Ticket gerado diretamente no chat do usuário para acompanhamento.
+npm install
+```
+
+3. Variáveis de Ambiente (.env)
+   Crie um arquivo .env na raiz do projeto:
+
+```
+# GLPI CONFIG
+GLPI_API_URL=[https://seu-glpi.com/apirest.php](https://seu-glpi.com/apirest.php)
+GLPI_APP_TOKEN=seu_app_token
+GLPI_USER_TOKEN=seu_user_token
+
+# IA (GROQ)
+GROQ_API_KEY=sua_chave_groq
+
+# BOT CONFIG
+TELEGRAM_API_KEY=sua_chave_telegram
+PORT=3000
+```
+
+🛣️ Roadmap de Evolução
+[x] Integração com Groq (Whisper + Llama 3)
+
+[x] Autenticação Stateless no GLPI
+
+[x] Conversão automática de arquivos de voz
+
+[ ] Fase 2: Integração com WhatsApp Business API
+
+[ ] Fase 3: Cache de Sessão com Redis para Tokens GLPI
+
+[ ] Fase 4: Feedback em tempo real com link direto do chamado

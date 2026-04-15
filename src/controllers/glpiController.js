@@ -1,9 +1,15 @@
-import * as glpi from '../services/glpiService.js';
-import { transcreverAudio, revisarTextoComIA } from '../services/transcriptionService.js';
-import { converterOggToMp3 } from '../utils/audioConverter.js';
 import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import * as glpi from '../services/glpiService.js';
+import { revisarTextoComIA, transcreverAudio } from '../services/transcriptionService.js';
+import { converterOggToMp3 } from '../utils/audioConverter.js';
 
-// Criação do chamado
+// Configuração de caminhos absolutos (Melhor prática de arquitetura)
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+// Isso garante que a pasta temp fique na raiz do projeto, independente de onde o bot seja iniciado
+const pastaTemp = path.join(__dirname, '..', '..', 'temp');
+
 async function criarChamado(titulo, texto, idRequerente = null, idCategoria = null, idLocalizacao = null) {
   let sessionToken = null;
   try {
@@ -18,54 +24,44 @@ async function criarChamado(titulo, texto, idRequerente = null, idCategoria = nu
   }
 }
 
-// Função principal que orquestra o processo de transcrição
-async function processarAudio(caminhoDoAudioBase) {
-  const caminhoAudioMp3 = caminhoDoAudioBase.replace('.ogg', '.mp3');
-  let dadosDaIA;
+async function processarAudio(urlAudioTelegram) {
+  // 1. Garantia de Infraestrutura
+  if (!fs.existsSync(pastaTemp)) {
+    fs.mkdirSync(pastaTemp, { recursive: true });
+  }
+
+  // 2. Definição única de nomes (Resolvendo o erro de redeclaração)
+  const timestamp = Date.now();
+  const caminhoMp3 = path.join(pastaTemp, `audio_${timestamp}.mp3`);
 
   try {
-    // 1. Converte o áudio
-    await converterOggToMp3(caminhoDoAudioBase, caminhoAudioMp3);
+    // 3. Conversão
+    await converterOggToMp3(urlAudioTelegram, caminhoMp3);
 
-    // 2. IA Primária (Whisper)
-    // Usamos 'let' para poder sobrescrever com o texto de teste logo abaixo
-    const textoBruto = await transcreverAudio(caminhoAudioMp3);
-    console.log("🎙️ IA primaria - Saiu do Whisper:", textoBruto);
+    // 4. Transcrição
+    const textoBruto = await transcreverAudio(caminhoMp3);
 
-    // MOCK (Texto de Teste forçado)
-    const textoDeTeste = "E aí, mestre! Tranquilo? Seguinte, a casa caiu aqui na Sala 4. Eu tava de boa tentando abrir o slide da apresentação, mas acho que o bagulho deu gargalo pesado. Do nada, o monitor meteu aquela Blue Screen of Death (BSOD) na minha cara, tá ligado? O pior é que o erro dizia uns códigos lá, tipo 0x000... sei lá o quê, mas não deu pra anotar porque o ventilador aqui da sala tá fazendo um barulho de helicóptero e me distraiu.Eu até tentei dar aquele tapinha técnico na lateral do gabinete pra ver se o HD voltava pro trilho, mas acho que o clock da memória entrou em curto com o ar - condicionado que tá pingando aqui perto. Será que foi porque eu tentei espetar meu pendrive de 2012 que tava na mochila com um resto de farelo de bolacha ? O PC deu um reboot infinito e agora só fica num loop sinistro.O professor já tá me olhando torto e eu só queria saber se tu consegue dar um overclock aí pra ele subir o Windows antes da minha nota virar fumaça.Salva nois!";
+    // 5. Inteligência e Refinamento
+    const respostaIA = await revisarTextoComIA(textoBruto);
 
-    // 3. IA Secundária (Llama 3)
-    const textoLimpo = await revisarTextoComIA(textoDeTeste);
-    console.log("🧠 IA secundaria - Saiu do Llama 3:", textoLimpo);
-
-    // 4. Sanitização e Parse (AGORA SIM, temos o textoLimpo para ler!)
-    const match = textoLimpo.match(/\{[\s\S]*\}/);
-    if (!match) throw new Error("Nenhum JSON encontrado na resposta da IA.");
-
-    dadosDaIA = JSON.parse(match[0]); // Transforma a string em Objeto
-    console.log("📦 JSON Extraído e Seguro!");
-
-    // 5. Devolvemos o OBJETO para o index.js usar
+    // 6. Parsing do resultado
+    const dadosDaIA = JSON.parse(respostaIA);
     return dadosDaIA;
 
   } catch (error) {
-    console.error('\n❌ Erro durante o processamento do áudio:', error.message);
-    throw error;
+    console.error('❌ Erro no processamento do áudio:', error.message);
+    throw error; // Repassa o erro para o Bot avisar o usuário
   } finally {
-    // 6. Limpeza do arquivo MP3 gerado
-    try {
-      if (fs.existsSync(caminhoAudioMp3)) {
-        fs.unlinkSync(caminhoAudioMp3);
-        console.log('🧹 Arquivo MP3 temporário removido.');
+    // 7. Limpeza rigorosa (O bloco finally sempre executa, mesmo se der erro)
+    if (fs.existsSync(caminhoMp3)) {
+      try {
+        fs.unlinkSync(caminhoMp3);
+      } catch (err) {
+        console.error('⚠️ Erro ao deletar temporário:', err.message);
       }
-    } catch (err) {
-      console.error('⚠️ Erro ao remover o arquivo MP3 temporário:', err.message);
     }
   }
 }
 
-export {
-  criarChamado,
-  processarAudio
-};
+export { criarChamado, processarAudio };
+
