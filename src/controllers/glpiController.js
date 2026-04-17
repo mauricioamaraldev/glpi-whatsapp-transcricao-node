@@ -1,13 +1,12 @@
+import axios from 'axios'; // Adicionado para realizar o download
 import fs from 'fs';
 import path from 'path';
+import { pipeline } from 'stream/promises'; // Melhor prática para lidar com streams
 import { fileURLToPath } from 'url';
 import * as glpi from '../services/glpiService.js';
 import { revisarTextoComIA, transcreverAudio } from '../services/transcriptionService.js';
-import { converterOggToMp3 } from '../utils/audioConverter.js';
 
-// Configuração de caminhos absolutos (Melhor prática de arquitetura)
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-// Isso garante que a pasta temp fique na raiz do projeto, independente de onde o bot seja iniciado
 const pastaTemp = path.join(__dirname, '..', '..', 'temp');
 
 async function criarChamado(titulo, texto, idRequerente = null, idCategoria = null, idLocalizacao = null) {
@@ -25,37 +24,40 @@ async function criarChamado(titulo, texto, idRequerente = null, idCategoria = nu
 }
 
 async function processarAudio(urlAudioTelegram) {
-  // 1. Garantia de Infraestrutura
   if (!fs.existsSync(pastaTemp)) {
     fs.mkdirSync(pastaTemp, { recursive: true });
   }
 
-  // 2. Definição única de nomes (Resolvendo o erro de redeclaração)
   const timestamp = Date.now();
-  const caminhoMp3 = path.join(pastaTemp, `audio_${timestamp}.mp3`);
+  const caminhoArquivo = path.join(pastaTemp, `audio_${timestamp}.mp3`);
 
   try {
-    // 3. Conversão
-    await converterOggToMp3(urlAudioTelegram, caminhoMp3);
+    // 1. Download do áudio via Stream (Substitui o conversor)
+    const response = await axios({
+      method: 'get',
+      url: urlAudioTelegram,
+      responseType: 'stream',
+    });
 
-    // 4. Transcrição
-    const textoBruto = await transcreverAudio(caminhoMp3);
+    await pipeline(response.data, fs.createWriteStream(caminhoArquivo));
 
-    // 5. Inteligência e Refinamento
+    // 2. Transcrição (Envia o arquivo bruto para a Groq)
+    const textoBruto = await transcreverAudio(caminhoArquivo);
+
+    // 3. Inteligência e Refinamento
     const respostaIA = await revisarTextoComIA(textoBruto);
 
-    // 6. Parsing do resultado
-    const dadosDaIA = JSON.parse(respostaIA);
-    return dadosDaIA;
+    // 4. Parsing do resultado
+    return JSON.parse(respostaIA);
 
   } catch (error) {
     console.error('❌ Erro no processamento do áudio:', error.message);
-    throw error; // Repassa o erro para o Bot avisar o usuário
+    throw error;
   } finally {
-    // 7. Limpeza rigorosa (O bloco finally sempre executa, mesmo se der erro)
-    if (fs.existsSync(caminhoMp3)) {
+    // 5. Limpeza de rastro (Fundamental para não encher o seu Precision 5860)
+    if (fs.existsSync(caminhoArquivo)) {
       try {
-        fs.unlinkSync(caminhoMp3);
+        fs.unlinkSync(caminhoArquivo);
       } catch (err) {
         console.error('⚠️ Erro ao deletar temporário:', err.message);
       }
