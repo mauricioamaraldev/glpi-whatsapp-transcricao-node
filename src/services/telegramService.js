@@ -8,7 +8,8 @@ export function inicializarBot() {
   bot.on(['voice', 'audio'], async (ctx) => {
     try {
       const usuario = ctx.from;
-      const nomeUsuario = usuario.first_name;
+      console.log(ctx.message)
+
       const fileId = ctx.message.voice ? ctx.message.voice.file_id : ctx.message.audio.file_id;
       const fileLink = await ctx.telegram.getFileLink(fileId);
       const urlAudio = fileLink.href;

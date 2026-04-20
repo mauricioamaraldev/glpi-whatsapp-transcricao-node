@@ -9,6 +9,14 @@ import { revisarTextoComIA, transcreverAudio } from '../services/transcriptionSe
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const pastaTemp = path.join(__dirname, '..', '..', 'temp');
 
+async function buscarUsuario(numeroUsuario) {
+  try {
+
+  } catch (error) {
+    console.error('❌ Erro na busca do usuario:', error.message);
+  }
+}
+
 async function criarChamado(titulo, texto, idRequerente = null, idCategoria = null, idLocalizacao = null) {
   let sessionToken = null;
   try {
@@ -65,5 +73,5 @@ async function processarAudio(urlAudioTelegram) {
   }
 }
 
-export { criarChamado, processarAudio };
+export { buscarUsuario, criarChamado, processarAudio };
 
