@@ -1,5 +1,4 @@
 import 'dotenv/config';
-import { inicializarBot } from "./services/telegramService.js";
+import { inicializarBot } from './bot/bot.js';
 
-// Inicializa o Bot (ele ficará ouvindo os eventos do Telegram)
 inicializarBot();
