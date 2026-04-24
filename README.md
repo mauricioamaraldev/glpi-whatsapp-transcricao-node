@@ -1,76 +1,167 @@
-# 🎧 Automação de Chamados GLPI via WhatsApp (AI Pipeline)
+# 🎧 GLPI AI-Voice Pipeline
 
-Este projeto é um _middleware_ em Node.js construído para automatizar e otimizar a abertura de chamados de suporte de TI em um ambiente universitário. Ele recebe relatos em áudio (padrão WhatsApp), processa o arquivo, transcreve, corrige jargões técnicos usando Inteligência Artificial e injeta o ticket perfeitamente formatado via REST API no sistema GLPI.
+> Middleware para transformar relatos informais de áudio em tickets técnicos estruturados no GLPI, via WhatsApp ou Telegram.
 
-## 🎯 O Problema que Resolvemos
+---
 
-Atualmente, usuários (professores e funcionários) encontram atrito ao parar suas aulas para abrir chamados detalhados no GLPI. Ao permitir o envio de áudios informais, reduzimos o tempo de resposta e garantimos que a equipe de TI receba tickets padronizados, com termos técnicos corretos e categorizados automaticamente.
+## 🎯 O Problema & A Solução
 
-## 🏗️ Arquitetura e Decisões de Engenharia
+**O Problema:** Professores e funcionários enfrentam fricção ao abrir chamados manuais durante as aulas. O resultado são descrições vagas como _"o computador não liga"_ ou _"está quebrado"_, o que atrasa o diagnóstico e a triagem.
 
-O sistema foi desenhado com foco em resiliência, isolamento de responsabilidades e escalabilidade:
+**A Solução:** Uma interface de voz que permite o envio de áudio natural pelo WhatsApp ou Telegram. O pipeline de IA interpreta o relato, identifica o local (ex: _"Sala 4"_), corrige jargões técnicos e abre o ticket via API REST do GLPI automaticamente — sem formulários, sem burocracia.
 
-- **Agentic Workflow (Pipeline de Múltiplas IAs):** Em vez de confiar em um único modelo, utilizamos uma esteira de dois passos. O **Whisper** atua como o "Ouvido" (Speech-to-Text), enquanto o **Llama 3** atua como o "Cérebro" (Revisor Técnico), formatando a saída em um JSON estrito.
-- **Garbage Collection Manual:** O processamento de mídia gera arquivos temporários. O Controller implementa rotinas de limpeza (`fs.unlink`) garantidas em blocos `finally` para evitar vazamento de memória e sobrecarga do disco do servidor.
-- **Defensive Programming & Adapter Pattern:** A comunicação com o FFmpeg foi encapsulada em Promises nativas, e as respostas da IA passam por sanitização via Expressões Regulares (Regex) antes do _parsing_ do JSON, protegendo a aplicação de quebras fatais.
-- **Data Mapper Pattern:** Tradução isolada de entidades em texto natural (ex: "Sala 4") para Chaves Primárias do banco de dados relacional do GLPI (ex: ID `55`).
+---
 
-## 🚀 Tecnologias Utilizadas
+## 🏗️ Arquitetura
 
-- **Node.js** (ES Modules)
-- **API Groq** (`whisper-large-v3` e `llama-3.3-70b-versatile`)
-- **API REST GLPI** (Autenticação Stateless com App-Token e Session-Token)
-- **FFmpeg** (`fluent-ffmpeg`)
-- **File System** nativo do Node.js (`fs/promises`)
-
-## 📁 Estrutura do Projeto
+O projeto segue o princípio de **responsabilidade única por camada**. Cada arquivo tem um papel bem definido e não conhece os detalhes das outras camadas.
 
 ```
-📦 src
-┣ 📂 controllers
-┃ ┗ 📜 glpiController.js # Orquestrador da esteira (Maestro) e Garbage Collector
-┣ 📂 services
-┃ ┣ 📜 glpiService.js # Integração HTTP com a API do GLPI (Auth e Criação)
-┃ ┗ 📜 transcriptionService.js # Pipeline de IA (Groq Whisper + Llama 3 JSON Mode)
-┣ 📂 utils
-┃ ┗ 📜 audioConverter.js # Adapter Pattern para o FFmpeg (OGG para MP3)
-┣ 📂 tests
-┃ ┗ 🔊 audio-teste.ogg # Arquivos de áudio isolados para testes
-┗ 📜 index.js # Entry point e Sandbox de testes da aplicação
+src/
+├── index.js                        # Ponto de entrada — inicializa o bot
+├── bot/
+│   └── bot.js                      # Eventos do mensageiro · verifica usuário · formata resposta
+├── controllers/
+│   └── chamadoController.js        # Orquestra os serviços · resolve IDs · regras de negócio
+├── services/
+│   ├── glpiService.js              # Chamadas HTTP para a API REST do GLPI
+│   └── transcriptionService.js     # Whisper (STT) + LLaMA (extração de dados via JSON Mode)
+├── utils/
+│   └── audioUtils.js               # Download e limpeza de arquivos temporários
+└── config/
+    ├── env.js                       # Validação de variáveis de ambiente na inicialização
+    └── mappings.js                  # Mapeamentos estáticos (localizações, categoria padrão)
 ```
 
-## ⚙️ Como Executar Localmente
+### Pipeline de processamento
+
+```
+Áudio (WhatsApp/Telegram)
+        │
+        ▼
+  [bot.js] Verifica se o número está cadastrado no GLPI
+        │  (consulta ao campo `mobile` do usuário via API)
+        │
+        ▼
+  [audioUtils.js] Download do áudio para arquivo temporário
+        │
+        ▼
+  [transcriptionService.js]
+        ├── Whisper-large-v3 → transcrição fonética de alta fidelidade
+        └── LLaMA-3.3-70b   → sanitização + extração de entidades (JSON Mode)
+                                  { titulo, descricao, idLocalizacao, idCategoria }
+        │
+        ▼
+  [chamadoController.js] Resolve IDs · abre sessão GLPI
+        │
+        ▼
+  [glpiService.js] POST /Ticket → GLPI
+        │
+        ▼
+  Resposta ao usuário com ID e título do chamado
+```
+
+---
+
+## 🧠 Decisões de Engenharia
+
+**Pipeline de IA em dois estágios**
+Em vez de um único prompt, usamos dois modelos especializados via Groq Cloud. O Whisper-large-v3 foca exclusivamente em transcrição fonética de alta fidelidade. O LLaMA-3.3-70b recebe o texto bruto e extrai as entidades relevantes (local, equipamento, ação) em JSON estrito, com `temperature: 0.1` para máxima consistência.
+
+**Autenticação via GLPI (sem mapeamento local)**
+A verificação de usuário consulta diretamente o campo `mobile` da API REST do GLPI. Isso elimina qualquer mapa hardcoded no código (`MAPA_USUARIOS`), evitando o risco de vazar números de telefone em repositórios. O GLPI é a única fonte da verdade.
+
+**Gestão de sessão GLPI**
+Cada operação abre e fecha sua própria sessão no bloco `try/finally`, garantindo que nenhuma sessão fique aberta em caso de erro. Operações relacionadas (buscar usuário + criar ticket) compartilham a mesma sessão para evitar overhead desnecessário.
+
+**Limpeza de arquivos temporários**
+Arquivos de áudio baixados para a pasta `temp/` são sempre removidos no bloco `finally`, independentemente de sucesso ou falha na transcrição. A pasta `temp/` está no `.gitignore`.
+
+**Validação de ambiente na inicialização**
+O `config/env.js` valida todas as variáveis de ambiente obrigatórias antes de o app subir. Se alguma estiver faltando, o processo encerra imediatamente com uma mensagem clara — em vez de quebrar silenciosamente no meio de uma requisição.
+
+---
+
+## 🚀 Stack
+
+| Camada     | Tecnologia                                       |
+| ---------- | ------------------------------------------------ |
+| Runtime    | Node.js 18+ (ES Modules)                         |
+| Mensageiro | Telegraf (Telegram) · whatsapp-web.js (WhatsApp) |
+| IA — STT   | Groq SDK · Whisper-large-v3                      |
+| IA — LLM   | Groq SDK · LLaMA-3.3-70b-versatile               |
+| HTTP       | Axios                                            |
+| ITSM       | GLPI REST API                                    |
+
+> **WhatsApp:** a integração usa `whatsapp-web.js` (autenticação por QR Code, sem API oficial da Meta). Requer Chromium instalado e consome ~300–500 MB de RAM devido ao Puppeteer.
+
+---
+
+## ⚙️ Configuração
 
 ### Pré-requisitos
 
-1. **Node.js** instalado (versão 18+ recomendada).
-2. **FFmpeg** instalado e configurado nas Variáveis de Ambiente (`PATH`) do Sistema Operacional.
-3. Chaves de API da Groq e credenciais de acesso ao GLPI.
+- Node.js 18+
+- Conta no [Groq Cloud](https://console.groq.com) com chave de API
+- GLPI com a API REST habilitada e um `App Token` + `User Token` configurados
+- Números de telefone cadastrados no campo **Celular** do perfil dos usuários no GLPI
 
-### Setup
+### Instalação
 
-1. Clone este repositório.
-2. Instale as dependências:
-   ```
-   npm install
-   ```
-3. Crie um arquivo `.env` na raiz do projeto com as seguintes variáveis:
-   ```
-   GROQ_API_KEY=sua_chave_aqui
-   GLPI_API_URL=http://seu-glpi/apirest.php
-   GLPI_APP_TOKEN=seu_app_token
-   GLPI_USER_TOKEN=seu_user_token
-   ```
-4. Coloque um arquivo de áudio `.ogg` na pasta `src/tests/` para simular o WhatsApp.
-5. Execute o arquivo principal:
-   ```
-   npm start
-   ```
+```bash
+git clone https://github.com/mauricioamaraldev/glpi-whatsapp-transcricao-node
+cd glpi-whatsapp-transcricao-node
+npm install
+```
 
-## 🛣️ Próximos Passos (Roadmap)
+### Variáveis de ambiente
 
-- [x] Processamento e conversão de mídia.
-- [x] Extração de áudio e correção semântica corporativa.
-- [x] Integração completa de sessão e abertura de chamados no GLPI.
-- [ ] **Fase 2:** Integração com Webhooks do WhatsApp (via biblioteca ou Meta Cloud API) para escutar mensagens em tempo real.
-- [ ] **Fase 3:** Retornar o ID do Ticket gerado diretamente no chat do usuário para acompanhamento.
+Crie um arquivo `.env` na raiz com base no `.env.example`:
+
+```env
+# GLPI
+GLPI_API_URL=https://seu-glpi.com/apirest.php
+GLPI_APP_TOKEN=seu_app_token
+GLPI_USER_TOKEN=seu_user_token
+
+# Groq
+GROQ_API_KEY=sua_chave_groq
+
+# Bot (Telegram ou WhatsApp — configure o que for usar)
+TELEGRAM_API_KEY=sua_chave_telegram
+```
+
+### Executar
+
+```bash
+# Produção
+npm start
+
+# Desenvolvimento (reinicia automaticamente ao salvar)
+npm run dev
+```
+
+**WhatsApp:** na primeira execução, um QR Code será exibido no terminal. Escaneie com o WhatsApp do número que será usado como bot. A sessão é salva localmente e reconectada automaticamente nas próximas execuções.
+
+### Cadastro de usuários
+
+Nenhum mapeamento manual é necessário. Basta garantir que o número de celular do usuário esteja preenchido no perfil do GLPI (**Administração → Usuários → [usuário] → Celular**).
+
+O formato recomendado é somente dígitos com DDD, sem código do país: `11999998888`. O sistema normaliza automaticamente o número recebido pelo WhatsApp antes de consultar o GLPI.
+
+---
+
+## 🛣️ Roadmap
+
+- [x] Pipeline Whisper + LLaMA com JSON Mode
+- [x] Autenticação stateless no GLPI (sessão por operação)
+- [x] Verificação de usuário via API do GLPI (sem mapeamento local)
+- [x] Suporte a Telegram
+- [x] Suporte a WhatsApp (whatsapp-web.js)
+- [x] Limpeza automática de arquivos temporários
+- [ ] Cache de sessão GLPI com Redis (reduzir latência em picos)
+- [ ] Suporte a mensagens de texto além de áudio
+- [ ] Webhook para notificar o usuário quando o chamado for atualizado
+- [ ] Painel de monitoramento de erros e volume de chamados
+
+---
