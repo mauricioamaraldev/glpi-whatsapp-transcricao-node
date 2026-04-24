@@ -1,41 +1,33 @@
-import 'dotenv/config';
-import Groq from 'groq-sdk';
 import fs from 'fs';
+import Groq from 'groq-sdk';
+import { config } from '../config/env.js';
 
-// Configuração do cliente Groq
-const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+const groq = new Groq({ apiKey: config.groq.apiKey });
 
-async function transcreverAudio(caminhoDoAudioBase) {
-  try {
-    const response = await groq.audio.transcriptions.create({
-      file: fs.createReadStream(caminhoDoAudioBase),
-      model: "whisper-large-v3",
-      response_format: "json",
-      // Instrução para o modelo: enfatizar a precisão de termos técnicos relacionados a tecnologia e instituições de ensino
-      prompt: "Áudio com termos técnicos de tecnologia e de instituição de ensino, como GLPI, API, Node.js, Datashow, PC, computador, estabilizador, fonte, sala, setor, lugar, ação etc... Transcreva com precisão esses termos.",
-      language: "pt"
-    });
+async function transcreverAudio(caminhoAudio) {
+  const response = await groq.audio.transcriptions.create({
+    file: fs.createReadStream(caminhoAudio),
+    model: "whisper-large-v3",
+    response_format: "json",
+    // Instrução para o modelo: enfatizar a precisão de termos técnicos relacionados a tecnologia e instituições de ensino
+    prompt: "Áudio com termos técnicos de tecnologia e de instituição de ensino, como GLPI, API, Node.js, Datashow, PC, computador, estabilizador, fonte, sala, setor, lugar, ação etc... Transcreva com precisão esses termos.",
+    language: "pt"
+  });
 
-    return response.text;
-  } catch (error) {
-    console.error('Erro ao transcrever áudio:', error.message);
-    throw error;
-  }
-};
+  return response.text;
+}
 
-// Função para revisar o texto transcrito usando IA
-async function revisarTextoComIA(textoBruto) {
-  try {
-    const completion = await groq.chat.completions.create({
-      model: "llama-3.3-70b-versatile",
-      temperature: 0.1,
-      // 🔒 TRAVA 1: Obriga a infraestrutura da Groq a cuspir apenas um JSON válido
-      response_format: { type: "json_object" },
-      messages: [
-        {
-          role: "system",
-          // Instrução clara para a IA
-          content: `Você é um técnico de suporte de uma Universidade responsável por triagem de chamados.
+async function extrairDadosDoChamado(textoBruto) {
+  const completion = await groq.chat.completions.create({
+    model: "llama-3.3-70b-versatile",
+    temperature: 0.1,
+    // 🔒 TRAVA 1: Obriga a infraestrutura da Groq a cuspir apenas um JSON válido
+    response_format: { type: "json_object" },
+    messages: [
+      {
+        role: "system",
+        // Instrução clara para a IA
+        content: `Você é um técnico de suporte de uma Universidade responsável por triagem de chamados.
           Sua única missão é ler a transcrição de áudio do usuário e corrigir os erros do reconhecimento de voz, extraindo também as informações mais importantes, se houver, como o local do problema, o equipamento envolvido, a ação que o usuário estava tentando realizar e o resultado esperado.
           
           Regras OBRIGATÓRIAS de correção:
@@ -47,24 +39,40 @@ async function revisarTextoComIA(textoBruto) {
           2. JAMAIS faça quebras de linha reais (Enter) dentro da string da descrição. Para pular linha ou criar tópicos, você DEVE escrever literalmente os caracteres \\n no texto.
           
           Exemplo exato de saída esperada (siga esta formatação estritamente):
+          // Dentro de revisarTextoComIA, altere o exemplo no System Prompt e coloque "(TESTE API)" no inicio do titulo:
           {
             "titulo": "Problema no PC da Sala 4",
-            "descricao": "O usuário relatou uma falha.\\n\\nInformações extraídas:\\n- Equipamento: Computador\\n- Ação: Abrir slide",
-            "idlocalizacao": "Sala 4"
-          }`
-        },
-        {
-          role: "user",
-          content: textoBruto
-        }
-      ],
-    });
+            "descricao": "O usuário relatou uma falha...",
+            "idLocalizacao": "Sala 4",
+            "idCategoria": 100
+          }
+            `
+      },
+      {
+        role: "user",
+        content: textoBruto
+      }
+    ],
+  });
 
-    return completion.choices[0]?.message?.content;
-  } catch (error) {
-    console.error('Erro ao revisar texto com IA:', error.message);
-    throw error;
+  const conteudo = completion.choices[0]?.message?.content;
+
+  if (!conteudo) {
+    throw new Error('A IA retornou uma resposta vazia.');
   }
+
+  let dados;
+  try {
+    dados = JSON.parse(conteudo);
+  } catch {
+    throw new Error(`A IA retornou um JSON inválido: ${conteudo}`);
+  }
+
+  if (!dados.titulo || !dados.descricao) {
+    throw new Error(`A IA não retornou os campos obrigatórios. Resposta: ${conteudo}`);
+  }
+
+  return dados;
 }
 
-export { transcreverAudio, revisarTextoComIA };
+export { transcreverAudio, extrairDadosDoChamado };
