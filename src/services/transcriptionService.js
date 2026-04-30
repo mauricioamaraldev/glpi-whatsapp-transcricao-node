@@ -19,7 +19,7 @@ async function transcreverAudio(caminhoAudio) {
 
 async function extrairDadosDoChamado(textoBruto) {
   const completion = await groq.chat.completions.create({
-    model: "llama-3.3-70b-versatile",
+    model: "llama-3.1-8b-instant",
     temperature: 0.1,
     // 🔒 TRAVA 1: Obriga a infraestrutura da Groq a cuspir apenas um JSON válido
     response_format: { type: "json_object" },

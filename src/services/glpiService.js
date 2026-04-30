@@ -53,16 +53,14 @@ async function criarTicket(sessionToken, { titulo, descricao, idRequerente, idCa
     },
   };
 
-  if (idRequerente) payload.input._users_id_requester = idRequerente;
-  console.log(idRequerente)
   if (idCategoria) payload.input.itilcategories_id = idCategoria;
   if (idLocalizacao) payload.input.locations_id = idLocalizacao;
 
-  const response = await api.post('/Ticket', payload, {
-    headers: { 'Session-Token': sessionToken },
-  });
+  // const response = await api.post('/Ticket', payload, {
+  //   headers: { 'Session-Token': sessionToken },
+  // });
 
-  return response.data;
+  return payload;
 }
 
 async function buscarUsuarioPorCelular(sessionToken, celular) {

@@ -1,5 +1,5 @@
 const variaveis = [
-  'TELEGRAM_API_KEY',
+  'TELEGRAM_API_KEY_TESTE',
   'GLPI_API_URL',
   'GLPI_APP_TOKEN',
   'GLPI_USER_TOKEN',
@@ -14,7 +14,7 @@ for (const variavel of variaveis) {
 
 export const config = {
   telegram: {
-    apiKey: process.env.TELEGRAM_API_KEY,
+    apiKey: process.env.TELEGRAM_API_KEY_TESTE,
   },
   glpi: {
     apiUrl: process.env.GLPI_API_URL,

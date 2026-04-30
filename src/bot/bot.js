@@ -4,37 +4,23 @@ import { processarAudio, abrirChamado } from '../controllers/chamadoController.j
 
 const bot = new Telegraf(config.telegram.apiKey);
 
-
 bot.on(['voice', 'audio'], async (ctx) => {
-  const telegramUserId = ctx.from.id;
-
-  // 1. Verificar se o usuário está autorizado
-  const idRequerente = telegramUserId;
-
-  if (idRequerente === null) {
-    return ctx.reply(
-      `Telegram user id ${telegramUserId}` +
-      '⛔ Seu usuário não está cadastrado no sistema.\n' +
-      'Entre em contato com o suporte de TI para liberar o acesso.'
-    );
-  }
-
-  // 2. Informar o usuário que o processamento começou
+  // Informar o usuário que o processamento começou
   await ctx.reply('🎙️ Áudio recebido! Estou transcrevendo e analisando...');
 
   try {
-    // 3. Obter URL do arquivo de áudio
+    // Obter URL do arquivo de áudio
     const fileId = ctx.message.voice?.file_id ?? ctx.message.audio?.file_id;
     const fileLink = await ctx.telegram.getFileLink(fileId);
 
-    // 4. Processar áudio e extrair dados via IA
+    // Processar áudio e extrair dados via IA
     const dadosChamado = await processarAudio(fileLink.href);
 
-    // 5. Abrir chamado no GLPI
+    // Abrir chamado no GLPI
     const ticket = await abrirChamado({
       titulo: dadosChamado.titulo,
       descricao: dadosChamado.descricao,
-      idRequerente,
+      idRequerente: 'teste',
       idCategoria: dadosChamado.idCategoria,
       nomeLocalizacao: dadosChamado.idLocalizacao,
     });
