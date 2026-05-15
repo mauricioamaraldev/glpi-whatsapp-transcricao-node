@@ -1,6 +1,7 @@
 import fs from 'fs';
 import Groq from 'groq-sdk';
 import { config } from '../config/env.js';
+import { PROMPT_TRANSCRICAO, PROMPT_EXTRACAO, PROMPT_CORRECAO } from '../config/prompts.js';
 
 const groq = new Groq({ apiKey: config.groq.apiKey });
 
@@ -10,7 +11,7 @@ async function transcreverAudio(caminhoAudio) {
     model: "whisper-large-v3",
     response_format: "json",
     // Instrução para o modelo: enfatizar a precisão de termos técnicos relacionados a tecnologia e instituições de ensino
-    prompt: "Áudio com termos técnicos de tecnologia e de instituição de ensino, como GLPI, API, Node.js, Datashow, PC, computador, estabilizador, fonte, sala, setor, lugar, ação etc... Transcreva com precisão esses termos.",
+    prompt: PROMPT_TRANSCRICAO,
     language: "pt"
   });
 
@@ -19,7 +20,7 @@ async function transcreverAudio(caminhoAudio) {
 
 async function extrairDadosDoChamado(textoBruto) {
   const completion = await groq.chat.completions.create({
-    model: "llama-3.1-8b-instant",
+    model: "llama-3.3-70b-versatile",
     temperature: 0.1,
     // 🔒 TRAVA 1: Obriga a infraestrutura da Groq a cuspir apenas um JSON válido
     response_format: { type: "json_object" },
@@ -27,26 +28,7 @@ async function extrairDadosDoChamado(textoBruto) {
       {
         role: "system",
         // Instrução clara para a IA
-        content: `Você é um técnico de suporte de uma Universidade responsável por triagem de chamados.
-          Sua única missão é ler a transcrição de áudio do usuário e corrigir os erros do reconhecimento de voz, extraindo também as informações mais importantes, se houver, como o local do problema, o equipamento envolvido, a ação que o usuário estava tentando realizar e o resultado esperado.
-          
-          Regras OBRIGATÓRIAS de correção:
-          - O texto final deve ser claro e profissional.
-          - Entregar texto final OBRIGATORIAMENTE no formato JSON.
-          
-          🔒 TRAVA 2: REGRAS DE SINTAXE JSON (CRÍTICO PARA O SISTEMA NÃO QUEBRAR):
-          1. JAMAIS use aspas duplas ("") dentro dos valores de texto. Se precisar destacar uma palavra, use aspas simples ('').
-          2. JAMAIS faça quebras de linha reais (Enter) dentro da string da descrição. Para pular linha ou criar tópicos, você DEVE escrever literalmente os caracteres \\n no texto.
-          
-          Exemplo exato de saída esperada (siga esta formatação estritamente):
-          // Dentro de revisarTextoComIA, altere o exemplo no System Prompt e coloque "(TESTE API)" no inicio do titulo:
-          {
-            "titulo": "Problema no PC da Sala 4",
-            "descricao": "O usuário relatou uma falha...",
-            "idLocalizacao": "Sala 4",
-            "idCategoria": 100
-          }
-            `
+        content: PROMPT_EXTRACAO
       },
       {
         role: "user",
@@ -75,4 +57,33 @@ async function extrairDadosDoChamado(textoBruto) {
   return dados;
 }
 
-export { transcreverAudio, extrairDadosDoChamado };
+async function aplicarCorrecao(dadosAnteriores, correcaoUsuario) {
+  const completion = await groq.chat.completions.create({
+    model: "llama-3.3-70b-versatile",
+    temperature: 0.1,
+    response_format: { type: "json_object" },
+    messages: [
+      { role: 'system', content: PROMPT_CORRECAO },
+      { role: 'assistant', content: JSON.stringify(dadosAnteriores) },
+      { role: 'user', content: `Corrija os dados acima: "${correcaoUsuario}"` },
+    ],
+  });
+
+  const conteudo = completion.choices[0]?.message?.content;
+  if (!conteudo) throw new Error('A IA retornou resposta vazia na correção.');
+
+  let dados;
+  try {
+    dados = JSON.parse(conteudo);
+  } catch {
+    throw new Error(`JSON inválido na correção: ${conteudo}`);
+  }
+
+  if (!dados.titulo || !dados.descricao) {
+    throw new Error(`Campos obrigatórios ausentes na correção: ${conteudo}`);
+  }
+
+  return dados;
+}
+
+export { transcreverAudio, extrairDadosDoChamado, aplicarCorrecao };

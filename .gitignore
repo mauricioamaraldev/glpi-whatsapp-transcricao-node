@@ -5,3 +5,4 @@ node_modules/
 temp/
 .wwebjs_auth/
 data/
+src/config/prompts.js

@@ -1,0 +1,302 @@
+[
+  {
+    "id": 1,
+    "nome": "CIT"
+  },
+  {
+    "id": 2,
+    "nome": "ALMOXARIFADO"
+  },
+  {
+    "id": 3,
+    "nome": "ANEXO PISO 1 CLÍNICA ESCOLA"
+  },
+  {
+    "id": 4,
+    "nome": "ANEXO PISO 2 CLINICA ESCOLA"
+  },
+  {
+    "id": 6,
+    "nome": "ANEXO PISO 3 CLINICA ESCOLA"
+  },
+  {
+    "id": 7,
+    "nome": "ANEXO PISO 4 CLINICA ESCOLA"
+  },
+  {
+    "id": 8,
+    "nome": "ANEXO PISO 5 CLINICA ESCOLA"
+  },
+  {
+    "id": 9,
+    "nome": "ANEXO PISO 6 CLINICA ESCOLA"
+  },
+  {
+    "id": 10,
+    "nome": "POLICLINICA UNDB CENTRO"
+  },
+  {
+    "id": 11,
+    "nome": "POS GRADUAÇÃO UNDB GOLDEN"
+  },
+  {
+    "id": 12,
+    "nome": "ANEXO RECEPÇÃO"
+  },
+  {
+    "id": 13,
+    "nome": "ANEXO CLINICA ESCOLA DE PSICOLOGIA"
+  },
+  {
+    "id": 14,
+    "nome": "BIBLIOTECA DBOSCO"
+  },
+  {
+    "id": 15,
+    "nome": "BIBLIOTECA UNDB"
+  },
+  {
+    "id": 16,
+    "nome": "CALLCENTER"
+  },
+  {
+    "id": 18,
+    "nome": "CENTRAL DE ATENDIMENTO"
+  },
+  {
+    "id": 19,
+    "nome": "COMPRAS"
+  },
+  {
+    "id": 20,
+    "nome": "MARKETING"
+  },
+  {
+    "id": 21,
+    "nome": "CONTABILIDADE"
+  },
+  {
+    "id": 22,
+    "nome": "COORDENAÇÕES DE CURSO"
+  },
+  {
+    "id": 23,
+    "nome": "PREFEITURA"
+  },
+  {
+    "id": 24,
+    "nome": "DEPARTAMENTO PESSOAL"
+  },
+  {
+    "id": 25,
+    "nome": "COORDENAÇÃO DE MEDICINA"
+  },
+  {
+    "id": 26,
+    "nome": "COORDENAÇÃO PISO 01"
+  },
+  {
+    "id": 27,
+    "nome": "COORDENAÇÃO PISO 02"
+  },
+  {
+    "id": 28,
+    "nome": "COORDENAÇÃO INFANTIL"
+  },
+  {
+    "id": 29,
+    "nome": "DATA CENTER"
+  },
+  {
+    "id": 30,
+    "nome": "DIRETORIA GDB"
+  },
+  {
+    "id": 31,
+    "nome": "FINANCEIRO"
+  },
+  {
+    "id": 32,
+    "nome": "LABORATORIO DE INFORMATICA 01"
+  },
+  {
+    "id": 33,
+    "nome": "LABORATORIO DE INFORMATICA 02"
+  },
+  {
+    "id": 34,
+    "nome": "LABORATORIO DE INFORMATICA 03"
+  },
+  {
+    "id": 35,
+    "nome": "NPJ"
+  },
+  {
+    "id": 36,
+    "nome": "LUPI"
+  },
+  {
+    "id": 37,
+    "nome": "MECANOGRAFIA"
+  },
+  {
+    "id": 38,
+    "nome": "NCE"
+  },
+  {
+    "id": 39,
+    "nome": "NTE"
+  },
+  {
+    "id": 40,
+    "nome": "MONITORAMENTO"
+  },
+  {
+    "id": 41,
+    "nome": "OUVIDORIA"
+  },
+  {
+    "id": 43,
+    "nome": "RECEPÇÃO DOM BOSCO"
+  },
+  {
+    "id": 44,
+    "nome": "RECEPÇÃO INFANTIL"
+  },
+  {
+    "id": 45,
+    "nome": "RECEPÇÃO UNDB"
+  },
+  {
+    "id": 46,
+    "nome": "RECURSOS HUMANOS"
+  },
+  {
+    "id": 47,
+    "nome": "RED BALLON"
+  },
+  {
+    "id": 48,
+    "nome": "SALA DE REUNIÃO ADMINISTRATIVO"
+  },
+  {
+    "id": 49,
+    "nome": "SALA DOS PROFESSORES INFANTIL"
+  },
+  {
+    "id": 50,
+    "nome": "SECAD"
+  },
+  {
+    "id": 51,
+    "nome": "TEATRO MARIA IZABEL"
+  },
+  {
+    "id": 52,
+    "nome": "TEIA"
+  },
+  {
+    "id": 53,
+    "nome": "TELEFONIA"
+  },
+  {
+    "id": 54,
+    "nome": "HANDS-ON"
+  },
+  {
+    "id": 55,
+    "nome": "SALAS DE AULA UNDB"
+  },
+  {
+    "id": 56,
+    "nome": "SALA DE DESCOMPRESSÃO MEDICINA"
+  },
+  {
+    "id": 57,
+    "nome": "SALA DOS CONSELHOS"
+  },
+  {
+    "id": 59,
+    "nome": "SALAS DE AULA DOM BOSCO"
+  },
+  {
+    "id": 60,
+    "nome": "SALA DOS PROFESSORES MEDICINA"
+  },
+  {
+    "id": 61,
+    "nome": "BIBLIOTECA MEDICINA"
+  },
+  {
+    "id": 62,
+    "nome": "SALAS DE TUTORIA MEDICINA"
+  },
+  {
+    "id": 63,
+    "nome": "SALA DE CONFERÊNCIA MEDICINA"
+  },
+  {
+    "id": 64,
+    "nome": "SALA CONCEITO"
+  },
+  {
+    "id": 65,
+    "nome": "AUDITORIO DOM BOSCO"
+  },
+  {
+    "id": 66,
+    "nome": "SALAS DE METODOLOGIA ATIVAS"
+  },
+  {
+    "id": 67,
+    "nome": "GINASIO"
+  },
+  {
+    "id": 68,
+    "nome": "LABORATORIOS DE MEDICINA"
+  },
+  {
+    "id": 69,
+    "nome": "LABORATORIOS DE ENGENHARIA"
+  },
+  {
+    "id": 70,
+    "nome": "CLINICA DE MEDICINA PISO 03"
+  },
+  {
+    "id": 71,
+    "nome": "CLINICA DE MEDICINA PISO 02"
+  },
+  {
+    "id": 72,
+    "nome": "CLINICA DE ODONTO TERREO"
+  },
+  {
+    "id": 73,
+    "nome": "CLINICA DE ODONTO PISO 01"
+  },
+  {
+    "id": 74,
+    "nome": "COORDENAÇÃO PISO 03"
+  },
+  {
+    "id": 75,
+    "nome": "GENTE E GESTÃO"
+  },
+  {
+    "id": 76,
+    "nome": "PÓS GRADUAÇÃO UNDB - ITZ"
+  },
+  {
+    "id": 77,
+    "nome": "SEGURANÇA"
+  },
+  {
+    "id": 78,
+    "nome": "MAKER SPACE"
+  },
+  {
+    "id": 79,
+    "nome": "QUALIDADE"
+  }
+]
