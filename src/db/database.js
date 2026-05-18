@@ -35,6 +35,13 @@ async function criarTabelas() {
     });
   }
 
+  const temAvisoEnviado = await db.schema.hasColumn('sessions', 'aviso_enviado');
+  if (!temAvisoEnviado) {
+    await db.schema.table('sessions', table => {
+      table.boolean('aviso_enviado').defaultTo(false);
+    });
+  }
+
   const temTicketState = await db.schema.hasTable('ticket_state');
   if (!temTicketState) {
     await db.schema.createTable('ticket_state', table => {
@@ -57,6 +64,7 @@ export async function salvarSession(userId, dados, estado = 'aguardando_confirma
       estado,
       login_pendente: loginPendente,
       atualizado_em: new Date().toISOString(),
+      aviso_enviado: false,
       tentativas: db.raw('tentativas + 1'),
     });
   } else {
@@ -66,8 +74,16 @@ export async function salvarSession(userId, dados, estado = 'aguardando_confirma
       dados_json: JSON.stringify(dados ?? {}),
       login_pendente: loginPendente,
       atualizado_em: new Date().toISOString(),
+      aviso_enviado: false,
     });
   }
+}
+
+export async function atualizarTimestamp(userId) {
+  await db('sessions').where({ user_id: userId }).update({
+    atualizado_em: new Date().toISOString(),
+    aviso_enviado: false,
+  });
 }
 
 export async function buscarSession(userId) {
@@ -115,6 +131,19 @@ export async function temSessionAtiva(userId) {
 export async function listarSessionsExpiradas(minutos = 5) {
   const limite = new Date(Date.now() - minutos * 60 * 1000).toISOString();
   return db('sessions').where('atualizado_em', '<', limite);
+}
+
+export async function listarSessionsParaAviso(minutosAviso = 4, minutosExpiracao = 5) {
+  const limiteProximo = new Date(Date.now() - minutosAviso * 60 * 1000).toISOString();
+  const limiteExpiracao = new Date(Date.now() - minutosExpiracao * 60 * 1000).toISOString();
+  return db('sessions')
+    .where('atualizado_em', '<', limiteProximo)
+    .where('atualizado_em', '>', limiteExpiracao)
+    .where('aviso_enviado', false);
+}
+
+export async function marcarAvisoEnviado(userId) {
+  await db('sessions').where({ user_id: userId }).update({ aviso_enviado: true });
 }
 
 await criarTabelas();

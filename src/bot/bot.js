@@ -1,6 +1,6 @@
 import pkg from 'whatsapp-web.js';
 import qrcode from 'qrcode-terminal';
-import { salvarSession, buscarSession, deletarSession, temSessionAtiva, registrarTicket } from '../db/database.js';
+import { salvarSession, buscarSession, deletarSession, temSessionAtiva, registrarTicket, atualizarTimestamp } from '../db/database.js';
 import { processarAudio, abrirChamado, verificarDadosParaAbertura } from '../controllers/chamadoController.js';
 import { transcreverAudio, aplicarCorrecao, extrairDadosDoChamado } from '../services/transcriptionService.js';
 import { downloadAudio, removerArquivoTemp } from '../utils/audioUtil.js';
@@ -77,6 +77,7 @@ client.on('message', async (mensagem) => {
   // COM SESSÃO ATIVA
   // ════════════════════════════════════════
   if (temSession) {
+    await atualizarTimestamp(numeroUsuario);
     const session = await buscarSession(numeroUsuario);
     const texto = mensagem.body?.trim() ?? '';
     console.log(`[BOT] Estado: ${session.estado} | Input: "${texto}"`);
