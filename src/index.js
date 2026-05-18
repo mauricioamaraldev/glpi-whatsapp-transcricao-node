@@ -1,4 +1,5 @@
+// src/index.js
 import 'dotenv/config';
-import { inicializarBot } from './bot/bot.js';
+import { inicializarBotWhatsapp } from './bot/bot.js';
 
-inicializarBot();
+inicializarBotWhatsapp();

@@ -1,3 +1,8 @@
-node_modules
+node_modules/
 .env
 *.log
+.wwebjs_cache/
+temp/
+.wwebjs_auth/
+data/
+src/config/prompts.js

@@ -1,26 +1,24 @@
-import axios from 'axios';
+// src/utils/audioUtil.js
 import fs from 'fs';
+import fsPromises from 'fs/promises';
 import path from 'path';
-import { pipeline } from 'stream/promises';
 import { fileURLToPath } from 'url';
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 const PASTA_TEMP = path.join(__dirname, '..', '..', 'temp');
 
-async function downloadAudio(url) {
+async function downloadAudio(mediaData, messageId) {
+  // Ensure the temp folder exists
   if (!fs.existsSync(PASTA_TEMP)) {
     fs.mkdirSync(PASTA_TEMP, { recursive: true });
   }
 
-  const caminhoArquivo = path.join(PASTA_TEMP, `audio_${Date.now()}.mp3`);
+  const caminhoArquivo = path.join(PASTA_TEMP, `audio_${messageId}.ogg`);
 
-  const response = await axios({
-    method: 'get',
-    url,
-    responseType: 'stream',
-  });
-
-  await pipeline(response.data, fs.createWriteStream(caminhoArquivo));
+  // We don't need axios or streams. We just write the base64 string directly to disk!
+  await fsPromises.writeFile(caminhoArquivo, mediaData, 'base64');
 
   return caminhoArquivo;
 }

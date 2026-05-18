@@ -1,10 +1,4 @@
 node_modules
-<<<<<<< HEAD
-npm-debug.log
-Dockerfile
-.dockerignore
-.git
-=======
 .env
 .env.*
 !.env.example
@@ -12,4 +6,3 @@ Dockerfile
 .git
 .gitignore
 README.md
->>>>>>> bf31b8483c580d8b3a1daf486f6edc3c1dfe8086
