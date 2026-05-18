@@ -11,3 +11,11 @@ services:
       NODE_ENV: development
     volumes:
       - ./src:/app/src:ro
+      - whatsapp_auth:/app/.wwebjs_auth
+      - bot_data:/app/data
+      - bot_temp:/app/temp
+
+volumes:
+  whatsapp_auth:
+  bot_data:
+  bot_temp:

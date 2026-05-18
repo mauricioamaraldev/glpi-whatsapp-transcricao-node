@@ -25,7 +25,7 @@ async function processarAudio(media, messageId) {
   }
 }
 
-async function abrirChamado({ titulo, descricao, telefone, idCategoria }) {
+async function abrirChamado({ titulo, descricao, telefone, idCategoria, localizacaoEscolhida, localizacaoEscolhidaId }) {
   const sessionToken = await glpiService.initSession();
   try {
     const usuarioGlpi = await glpiService.buscarUsuarioPorCelular(sessionToken, telefone);
@@ -34,8 +34,8 @@ async function abrirChamado({ titulo, descricao, telefone, idCategoria }) {
 
     console.log(`[Controller] 👤 ${usuarioGlpi.nome} (ID: ${usuarioGlpi.id}) | Local: ${usuarioGlpi.localizacao}`);
 
-    // Busca o ID da localização pelo nome que veio do perfil
-    const idLocalizacao = await resolverIdLocalizacao(usuarioGlpi.localizacao);
+    const idLocalizacao = localizacaoEscolhidaId ?? await resolverIdLocalizacao(usuarioGlpi.localizacao);
+    const nomeLocalizacao = localizacaoEscolhida ?? usuarioGlpi.localizacao;
 
     const ticket = await glpiService.criarTicket(sessionToken, {
       titulo,
@@ -45,7 +45,7 @@ async function abrirChamado({ titulo, descricao, telefone, idCategoria }) {
       idLocalizacao,
     });
 
-    return { ...ticket, localizacao: usuarioGlpi.localizacao, nome: usuarioGlpi.nome };
+    return { ...ticket, localizacao: nomeLocalizacao, nome: usuarioGlpi.nome };
   } finally {
     await glpiService.killSession(sessionToken);
   }
