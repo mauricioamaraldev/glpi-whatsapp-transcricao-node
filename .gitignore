@@ -1,8 +1,7 @@
+.wwebjs_auth/
+data/
+temp/
 node_modules/
 .env
-*.log
-.wwebjs_cache/
-temp/
-data/
 src/config/prompts.js
-.wwebjs_auth/
+src/config/localizacoes.json
