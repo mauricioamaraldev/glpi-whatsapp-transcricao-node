@@ -1,7 +1,7 @@
 import { listarSessionsExpiradas, listarSessionsParaAviso, marcarAvisoEnviado, deletarSession } from '../db/database.js';
 
 const TIMEOUT_MINUTOS = 5;
-const AVISO_MINUTOS = 4;
+const AVISO_MINUTOS = 3.5;
 const INTERVALO_MS = 60 * 1000;
 
 let notificarFn = null;
@@ -13,7 +13,7 @@ async function verificarAvisos() {
     if (notificarFn) {
       await notificarFn(
         session.user_id,
-        `⚠️ *Aviso de inatividade*\n\nSua conversa será encerrada em *1 minuto* por falta de resposta.\n\nResponda para continuar o atendimento.`
+        `⚠️ *Aviso de inatividade*\n\nSua conversa será encerrada em *1 minuto e meio* por falta de resposta.\n\nResponda para continuar o atendimento.`
       ).catch(err => console.warn('[Expiração] Erro ao enviar aviso:', err.message));
     }
   }
